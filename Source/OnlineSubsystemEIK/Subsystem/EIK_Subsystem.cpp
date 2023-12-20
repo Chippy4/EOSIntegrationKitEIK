@@ -1216,24 +1216,86 @@ void UEIK_Subsystem::OnLeaderboardListCompleted(bool bWasSuccess) const
 }
 
 void UEIK_Subsystem::OnSessionUserInviteAccepted(const bool bWasSuccessful, const int32 ControllerId,
-                                                 FUniqueNetIdPtr UserId, const FOnlineSessionSearchResult& InviteResult)
+	FUniqueNetIdPtr UserId, const FOnlineSessionSearchResult& InviteResult)
 {
 	if (bWasSuccessful)
 	{
 		UE_LOG(LogTemp, Log, TEXT("User %s has accepted an invitation to join session %s"), *UserId->ToString(), *InviteResult.GetSessionIdStr());
 		// Join the session
+
 		if (const IOnlineSessionPtr SessionInt = Online::GetSessionInterface(GetWorld()))
 		{
+			FName SessionNameToDestroy = "EIKSession"; // Provide the name of the session to destroy
+
+			IOnlineSubsystem* SubsystemPtr = Online::GetSubsystem(this->GetWorld());
+			IOnlineIdentityPtr IdentityPtr = SubsystemPtr->GetIdentityInterface();
+
+			bool bIsPlayerInSession = IsPlayerInSessionImpl(SessionInt.Get(), SessionNameToDestroy, *IdentityPtr->GetUniquePlayerId(0));
+
+			if (bIsPlayerInSession)
+			{
+				if (IOnlineIdentityPtr IdentityRef = Online::GetIdentityInterface())
+				{
+
+					FUniqueNetIdPtr NetID = IdentityRef->GetUniquePlayerId(0);
+					bool UnregisterPlayer = SessionInt->UnregisterPlayer(SessionNameToDestroy, *NetID);
+					if (UnregisterPlayer) {
+						UE_LOG(LogTemp, Warning, TEXT("Unregisterd User From Session"));
+					}
+					else {
+						UE_LOG(LogTemp, Warning, TEXT("Failed To Unregister User From Session"));
+					}
+
+				}
+				//UnRegisterPlayer(SessionNameToDestroy);
+
+				// Now, call the DestroyEosSession function
+				FBP_DestroySession_Callback Callback;
+				Callback.BindUFunction(this, "DestroySession_CallbackBP"); //Bind callback
+				DestroyEosSession(Callback, SessionNameToDestroy);
+				UE_LOG(LogTemp, Warning, TEXT("Is In Session, Destroying Old"));
+			}
+			else
+			{
+				// Player is not in the session, print "false" to the log
+				UE_LOG(LogTemp, Warning, TEXT("Player Not In A Session"));
+			}
+
+
+
+
+
+			//Updating Presence
+			IOnlineSubsystem* Subsystem = Online::GetSubsystem(this->GetWorld());
+			IOnlineIdentityPtr Identity = Subsystem->GetIdentityInterface();
+			IOnlinePresencePtr Presence = Subsystem->GetPresenceInterface();
+
+			FOnlineUserPresenceStatus Status;
+			Status.State = EOnlinePresenceState::Online;
+			Status.StatusStr = "In Match";
+			UE_LOG(LogTemp, Warning, TEXT("Presence Updated With Status: In Match"));
+			Presence->SetPresence(
+				*Identity->GetUniquePlayerId(0).Get(),
+				Status,
+				IOnlinePresence::FOnPresenceTaskCompleteDelegate::CreateLambda([](
+					const class FUniqueNetId& UserId,
+					const bool bWasSuccessful)
+					{
+						if (bWasSuccessful) // Check bWasSuccessful.
+							UE_LOG(LogTemp, Warning, TEXT("Presence Updated Successfully"));
+					}));
+
+			//Joining new session
 			SessionInt->OnJoinSessionCompleteDelegates.AddUObject(this, &UEIK_Subsystem::OnJoinSessionCompleted);
 			const FString SessionName = InviteResult.GetSessionIdStr();
 			UE_LOG(LogTemp, Log, TEXT("User %s has accepted an invitation to join session %s"), *UserId->ToString(), *SessionName);
-			SessionInt->JoinSession(0, FName(*SessionName),InviteResult);
+			SessionInt->JoinSession(0, FName(*SessionName), InviteResult);
 		}
 	}
 	else
 	{
 		UE_LOG(LogTemp, Warning, TEXT("Failed to accept invitation to join session"));
-	} 
+	}
 }
 
 //Callback Functions
