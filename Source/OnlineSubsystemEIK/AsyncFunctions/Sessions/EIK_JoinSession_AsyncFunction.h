@@ -29,6 +29,7 @@ class ONLINESUBSYSTEMEIK_API UEIK_JoinSession_AsyncFunction : public UBlueprintA
 	GENERATED_BODY()
 
 public:
+	FString RichPresense;
 
 	bool bDelegateCalled = false;
 	
@@ -44,7 +45,7 @@ public:
 	For Input Parameters, please refer to the documentation link above.
 	*/
 	UFUNCTION(BlueprintCallable, DisplayName="Join EIK Session",meta = (BlueprintInternalUseOnly = "true",  WorldContext = "WorldContextObject"), Category="EOS Integration Kit || Sessions")
-	static UEIK_JoinSession_AsyncFunction* JoinEIKSessions(UObject* WorldContextObject, FSessionFindStruct SessionToJoin);
+	static UEIK_JoinSession_AsyncFunction* JoinEIKSessions(FString RichPresense, UObject* WorldContextObject, FSessionFindStruct SessionToJoin);
 
 	FSessionFindStruct Var_SessionToJoin;
 	UObject* Var_WorldContextObject;

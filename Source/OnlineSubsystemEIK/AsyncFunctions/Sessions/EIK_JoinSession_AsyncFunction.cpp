@@ -5,11 +5,12 @@
 #include "OnlineSubsystemUtils.h"
 #include "Kismet/GameplayStatics.h"
 
-UEIK_JoinSession_AsyncFunction* UEIK_JoinSession_AsyncFunction::JoinEIKSessions(UObject* WorldContextObject, FSessionFindStruct SessionToJoin)
+UEIK_JoinSession_AsyncFunction* UEIK_JoinSession_AsyncFunction::JoinEIKSessions(FString RichPresense, UObject* WorldContextObject, FSessionFindStruct SessionToJoin)
 {
 	UEIK_JoinSession_AsyncFunction* Ueik_JoinSessionObject = NewObject<UEIK_JoinSession_AsyncFunction>();
 	Ueik_JoinSessionObject->Var_SessionToJoin = SessionToJoin;
 	Ueik_JoinSessionObject->Var_WorldContextObject = WorldContextObject;
+	Ueik_JoinSessionObject->RichPresense = RichPresense;
 	return Ueik_JoinSessionObject;
 }
 
@@ -52,6 +53,27 @@ void UEIK_JoinSession_AsyncFunction::JoinSession()
 			bDelegateCalled = true;
 			SetReadyToDestroy();
 		}
+
+		//Updating Presence
+		IOnlineSubsystem* Subsystem = Online::GetSubsystem(this->GetWorld());
+		IOnlineIdentityPtr Identity = Subsystem->GetIdentityInterface();
+		IOnlinePresencePtr Presence = Subsystem->GetPresenceInterface();
+
+		FOnlineUserPresenceStatus Status;
+		Status.State = EOnlinePresenceState::Online;
+		FString PresenceStatus = RichPresense;
+		Status.StatusStr = PresenceStatus;
+		UE_LOG(LogTemp, Warning, TEXT("Presence Updated With Status: %s"), *PresenceStatus);
+		Presence->SetPresence(
+			*Identity->GetUniquePlayerId(0).Get(),
+			Status,
+			IOnlinePresence::FOnPresenceTaskCompleteDelegate::CreateLambda([](
+				const class FUniqueNetId& UserId,
+				const bool bWasSuccessful)
+				{
+					if (bWasSuccessful) // Check bWasSuccessful.
+						UE_LOG(LogTemp, Log, TEXT("Presence Updated Successfully"));
+				}));
 	}
 	else
 	{
