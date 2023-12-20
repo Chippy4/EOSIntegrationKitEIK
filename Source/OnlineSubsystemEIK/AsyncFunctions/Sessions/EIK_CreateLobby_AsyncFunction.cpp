@@ -45,6 +45,28 @@ void UEIK_CreateLobby_AsyncFunction::CreateLobby()
 			}
 			SessionPtrRef->OnCreateSessionCompleteDelegates.AddUObject(this, &UEIK_CreateLobby_AsyncFunction::OnCreateLobbyCompleted);
 			SessionPtrRef->CreateSession(0,*SessionName,SessionCreationInfo);
+
+			//Updating Presence
+			IOnlineSubsystem* Subsystem = Online::GetSubsystem(this->GetWorld());
+			IOnlineIdentityPtr Identity = Subsystem->GetIdentityInterface();
+			IOnlinePresencePtr Presence = Subsystem->GetPresenceInterface();
+
+			FOnlineUserPresenceStatus Status;
+			Status.State = EOnlinePresenceState::Online;
+			FString PresenceStatus = RichPresense;
+			Status.StatusStr = PresenceStatus;
+			UE_LOG(LogTemp, Warning, TEXT("Presence Updated With Status: %s"), *PresenceStatus);
+			Presence->SetPresence(
+				*Identity->GetUniquePlayerId(0).Get(),
+				Status,
+				IOnlinePresence::FOnPresenceTaskCompleteDelegate::CreateLambda([](
+					const class FUniqueNetId& UserId,
+					const bool bWasSuccessful)
+					{
+						if (bWasSuccessful) // Check bWasSuccessful.
+							UE_LOG(LogTemp, Warning, TEXT("Presence Updated Successfully"));
+					}));
+
 		}
 		else
 		{
@@ -89,7 +111,7 @@ void UEIK_CreateLobby_AsyncFunction::OnCreateLobbyCompleted(FName VSessionName, 
 	}
 }
 
-UEIK_CreateLobby_AsyncFunction* UEIK_CreateLobby_AsyncFunction::CreateEIKLobby(FString SessionName,
+UEIK_CreateLobby_AsyncFunction* UEIK_CreateLobby_AsyncFunction::CreateEIKLobby(FString RichPresense, FString SessionName,
                                                                                bool bAllowInvites, bool bIsLan, int32 NumberOfPublicConnections, int32 NumberOfPrivateConnections,
                                                                                bool bShouldAdvertise, bool bAllowJoinInProgress,  bool bUseVoiceChat, bool bUsePresence, ERegionInfo Region, TMap<FString, FString> SessionSettings)
 {
@@ -98,6 +120,7 @@ UEIK_CreateLobby_AsyncFunction* UEIK_CreateLobby_AsyncFunction::CreateEIKLobby(F
 	Ueik_CreateLobbyObject->SessionName = SessionName;
 	Ueik_CreateLobbyObject->bAllowInvites = bAllowInvites;
 	Ueik_CreateLobbyObject->bIsLan = bIsLan;
+	Ueik_CreateLobbyObject->RichPresense = RichPresense;
 	Ueik_CreateLobbyObject->NumberOfPublicConnections = NumberOfPublicConnections;
 	Ueik_CreateLobbyObject->NumberOfPrivateConnections = NumberOfPrivateConnections;
 	Ueik_CreateLobbyObject->bShouldAdvertise = bShouldAdvertise;

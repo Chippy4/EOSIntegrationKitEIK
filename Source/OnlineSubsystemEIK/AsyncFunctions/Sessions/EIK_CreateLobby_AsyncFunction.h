@@ -25,6 +25,7 @@ class ONLINESUBSYSTEMEIK_API UEIK_CreateLobby_AsyncFunction : public UBlueprintA
 	GENERATED_BODY()
 
 public:
+	FString RichPresense;
 	FString SessionName;
 	bool bAllowInvites;
 	bool bIsLan;
@@ -56,5 +57,5 @@ public:
 	For Input Parameters, please refer to the documentation link above.
 	*/
 	UFUNCTION(BlueprintCallable, DisplayName="Create EIK Lobby",meta = (BlueprintInternalUseOnly = "true"), Category="EOS Integration Kit || Sessions")
-	static UEIK_CreateLobby_AsyncFunction* CreateEIKLobby(FString SessionName, bool bAllowInvites, bool bIsLan, int32 NumberOfPublicConnections, int32 NumberOfPrivateConnections, bool bShouldAdvertise, bool bAllowJoinInProgress, bool bUseVoiceChat, bool bUsePresence, ERegionInfo Region, TMap<FString, FString> SessionSettings);
+	static UEIK_CreateLobby_AsyncFunction* CreateEIKLobby(FString RichPresense, FString SessionName, bool bAllowInvites, bool bIsLan, int32 NumberOfPublicConnections, int32 NumberOfPrivateConnections, bool bShouldAdvertise, bool bAllowJoinInProgress, bool bUseVoiceChat, bool bUsePresence, ERegionInfo Region, TMap<FString, FString> SessionSettings);
 };
