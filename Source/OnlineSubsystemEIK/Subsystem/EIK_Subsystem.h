@@ -117,6 +117,15 @@ struct FFileListStruct
 };
 
 UENUM(BlueprintType)
+enum class EPresenceStatus : uint8 {
+	PR_Online       UMETA(DisplayName = "Online"),
+	PR_Offline              UMETA(DisplayName = "Offline"),
+	PR_Away        UMETA(DisplayName = "Away"),
+	PR_ExtendedAway        UMETA(DisplayName = "ExtendedAway"),
+	PR_DoNotDisturb              UMETA(DisplayName = "DoNotDisturb"),
+};
+
+UENUM(BlueprintType)
 enum class ERegionInfo : uint8 {
 	RE_NoSelection       UMETA(DisplayName="No Selection"),
 	RE_Asia               UMETA(DisplayName="Asia"),
