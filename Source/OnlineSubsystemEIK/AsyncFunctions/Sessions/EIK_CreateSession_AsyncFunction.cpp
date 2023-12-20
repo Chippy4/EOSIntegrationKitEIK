@@ -62,6 +62,27 @@ void UEIK_CreateSession_AsyncFunction::CreateSession()
 			}
 			SessionPtrRef->OnCreateSessionCompleteDelegates.AddUObject(this, &UEIK_CreateSession_AsyncFunction::OnCreateSessionCompleted);
 			SessionPtrRef->CreateSession(0,*SessionName,SessionCreationInfo);
+
+			//Updating Presence
+			IOnlineSubsystem* Subsystem = Online::GetSubsystem(this->GetWorld());
+			IOnlineIdentityPtr Identity = Subsystem->GetIdentityInterface();
+			IOnlinePresencePtr Presence = Subsystem->GetPresenceInterface();
+
+			FOnlineUserPresenceStatus Status;
+			Status.State = EOnlinePresenceState::Online;
+			FString PresenceStatus = RichPresense;
+			Status.StatusStr = PresenceStatus;
+			UE_LOG(LogTemp, Warning, TEXT("Presence Updated With Status: %s"), *PresenceStatus);
+			Presence->SetPresence(
+				*Identity->GetUniquePlayerId(0).Get(),
+				Status,
+				IOnlinePresence::FOnPresenceTaskCompleteDelegate::CreateLambda([](
+					const class FUniqueNetId& UserId,
+					const bool bWasSuccessful)
+					{
+						if (bWasSuccessful) // Check bWasSuccessful.
+							UE_LOG(LogTemp, Warning, TEXT("Presence Updated Successfully"));
+					}));
 		}
 		else
 		{
@@ -106,7 +127,7 @@ void UEIK_CreateSession_AsyncFunction::OnCreateSessionCompleted(FName VSessionNa
 	}
 }
 
-UEIK_CreateSession_AsyncFunction* UEIK_CreateSession_AsyncFunction::CreateEIKSession(FString SessionName,
+UEIK_CreateSession_AsyncFunction* UEIK_CreateSession_AsyncFunction::CreateEIKSession(FString RichPresense, FString SessionName,
                                                                                      bool bIsDedicatedServer, bool bIsLan, int32 NumberOfPublicConnections, int32 NumberOfPrivateConnections,
                                                                                      bool bShouldAdvertise, bool bAllowJoinInProgress, ERegionInfo Region, TMap<FString, FString> SessionSettings, FString PortToUse)
 {
@@ -115,6 +136,7 @@ UEIK_CreateSession_AsyncFunction* UEIK_CreateSession_AsyncFunction::CreateEIKSes
 	Ueik_CreateSessionObject->SessionName = SessionName;
 	Ueik_CreateSessionObject->bIsDedicatedServer = bIsDedicatedServer;
 	Ueik_CreateSessionObject->bIsLan = bIsLan;
+	Ueik_CreateSessionObject->RichPresense = RichPresense;
 	Ueik_CreateSessionObject->NumberOfPublicConnections = NumberOfPublicConnections;
 	Ueik_CreateSessionObject->NumberOfPrivateConnections = NumberOfPrivateConnections;
 	Ueik_CreateSessionObject->bShouldAdvertise = bShouldAdvertise;
