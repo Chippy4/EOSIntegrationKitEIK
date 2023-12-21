@@ -1227,6 +1227,18 @@ void UEIK_Subsystem::OnSessionUserInviteAccepted(const bool bWasSuccessful, cons
 		{
 			FName SessionNameToDestroy = "EIKSession"; // Provide the name of the session to destroy
 
+			SessionInt->OnDestroySessionCompleteDelegates.AddUObject(this, &UEIK_Subsystem::OnDestroySessionCompleted);
+			bool bDestroySessionResult = SessionInt->DestroySession(SessionNameToDestroy);
+			if (bDestroySessionResult)
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Destroyed Old Session"));
+			}
+			else
+			{
+				UE_LOG(LogTemp, Warning, TEXT("Couldn't Destroy Old Session"));
+
+			}
+
 			IOnlineSubsystem* SubsystemPtr = Online::GetSubsystem(this->GetWorld());
 			IOnlineIdentityPtr IdentityPtr = SubsystemPtr->GetIdentityInterface();
 
@@ -1238,6 +1250,7 @@ void UEIK_Subsystem::OnSessionUserInviteAccepted(const bool bWasSuccessful, cons
 				{
 
 					FUniqueNetIdPtr NetID = IdentityRef->GetUniquePlayerId(0);
+					SessionInt->RemovePlayerFromSession(0, SessionNameToDestroy, *NetID);
 					bool UnregisterPlayer = SessionInt->UnregisterPlayer(SessionNameToDestroy, *NetID);
 					if (UnregisterPlayer) {
 						UE_LOG(LogTemp, Warning, TEXT("Unregisterd User From Session"));
@@ -1248,22 +1261,20 @@ void UEIK_Subsystem::OnSessionUserInviteAccepted(const bool bWasSuccessful, cons
 
 				}
 				//UnRegisterPlayer(SessionNameToDestroy);
-
+				
 				// Now, call the DestroyEosSession function
-				FBP_DestroySession_Callback Callback;
-				Callback.BindUFunction(this, "DestroySession_CallbackBP"); //Bind callback
-				DestroyEosSession(Callback, SessionNameToDestroy);
-				UE_LOG(LogTemp, Warning, TEXT("Is In Session, Destroying Old"));
+				//FBP_DestroySession_Callback Callback;
+				//Callback.BindUFunction(this, "DestroySession_CallbackBP"); //Bind callback
+				//DestroyEosSession(Callback, SessionNameToDestroy);
+				//UE_LOG(LogTemp, Warning, TEXT("Is In Session, Destroying Old"));
+
+				
 			}
 			else
 			{
-				// Player is not in the session, print "false" to the log
+				// Player is not in the session
 				UE_LOG(LogTemp, Warning, TEXT("Player Not In A Session"));
 			}
-
-
-
-
 
 			//Updating Presence
 			IOnlineSubsystem* Subsystem = Online::GetSubsystem(this->GetWorld());
